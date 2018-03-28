@@ -10,8 +10,8 @@ my class Entry {
 }
 
 has &.producer;
-has Int $!max-size = 1024;
-has Duration $!max-age;
+has Int $.max-size = 1024;
+has Duration $.max-age;
 
 has Entry %!entries = {};
 has Entry $!youngest;
@@ -20,12 +20,15 @@ has Lock $!lock = Lock.new;
 
 # XXX nicer constructor
 
-# XXX we could use some sort of overhand locking scheme to make the lock on the
-# entries struct taken for shorter amoutns of time, needs measurement though
-
 # XXX linked list, timestamps, limit size and so on
 
+# XXX tests
+
 # XXX measure throughput
+
+# XXX we could use some sort of overhand locking scheme to make the lock on the
+# entries struct taken for shorter amoutns of time, needs measurement though.
+# sharding could solve that problem as well
 
 # XXX sharding
 
@@ -42,6 +45,7 @@ method get($key) {
                 });
                 $entry.value;
             });
+            # XXX expire old entries
             return $entry.promise;
         }
         else {
@@ -65,6 +69,7 @@ method put($key, $value) {
             %!entries{$key} = $entry;
         }
         $entry.value = $value;
+        # XXX expire old entries
     });
 }
 
