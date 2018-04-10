@@ -18,7 +18,7 @@
 
 ## Example usage
 
-    my $cache = Cache::Async.new(producer => sub ($k) { ... });
+    my $cache = Cache::Async.new(max-size => 1000, producer => sub ($k) { ... });
     say await $cache.get("key234");
 
 ## License
