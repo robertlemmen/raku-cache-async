@@ -11,10 +11,10 @@
 * Locked internally so it can be used from multiple threads or a thread pool
 * Limits on cache size and optionally entry age
 * Propagates exceptions from producer transparently
+* Monitoring of hit rate 
 
 ## Upcoming Features
 
-* Monitoring of hit rate etc
 * Sharding to reduce lock contention
 * Better documentation
 

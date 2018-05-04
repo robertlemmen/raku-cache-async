@@ -18,7 +18,8 @@ has Entry $!youngest;
 has Entry $!oldest;
 has Lock $!lock = Lock.new;
 
-# XXX hit rate and other monitoring
+has atomicint $!hits = 0;
+has atomicint $!misses = 0;
 
 # XXX measure throughput
 
@@ -85,6 +86,7 @@ method get($key --> Promise) {
         }
         $entry = %!entries{$key};
         if ! defined $entry {
+            atomic-inc-fetch($!misses);
             $entry = Entry.new(key => $key, timestamp => $now);
             %!entries{$key} = $entry;
             self!link($entry);            
@@ -100,9 +102,11 @@ method get($key --> Promise) {
         }
         else {
             if defined $entry.promise {
+                atomic-inc-fetch($!misses);
                 return $entry.promise;
             }
             else {
+                atomic-inc-fetch($!hits);
                 my $ret = Promise.new;
                 $ret.keep($entry.value);
                 return $ret;
@@ -141,3 +145,10 @@ method clear() {
     });
 }
 
+method hits-misses() {
+    my $current-hits = atomic-fetch($!hits);
+    my $current-misses = atomic-fetch($!misses);
+    atomic-fetch-sub($!hits, $current-hits);
+    atomic-fetch-sub($!misses, $current-misses);
+    return ($current-hits, $current-misses);
+}
