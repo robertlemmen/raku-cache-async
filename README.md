@@ -12,9 +12,11 @@
 * Limits on cache size and optionally entry age
 * Propagates exceptions from producer transparently
 * Monitoring of hit rate 
+* Extra args can be passed through to producer easily
 
 ## Upcoming Features
 
+* Support for producers that return futures themselves
 * Better documentation
 
 ## Example usage

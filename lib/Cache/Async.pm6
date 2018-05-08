@@ -76,7 +76,7 @@ method !expire-by-age($now) {
     }
 }
 
-method get($key --> Promise) {
+method get($key, +@args --> Promise) {
     my $entry;
     my $now = Nil;
     $!lock.protect({
@@ -92,7 +92,7 @@ method get($key --> Promise) {
             self!link($entry);            
             $entry.promise = Promise.start({
                 $!lock.protect({
-                    $entry.value = &.producer.($key);
+                    $entry.value = &.producer.($key, |@args);
                     $entry.promise = Nil;
                 });
                 $entry.value;
