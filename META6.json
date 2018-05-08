@@ -9,9 +9,6 @@
     "test-depends" : [
         "Test::META"
     ],
-    "depends" : [
-        "String::CRC32"
-    ],
     "provides" : {
         "Cache::Async" : "lib/Cache/Async.pm6"
     },

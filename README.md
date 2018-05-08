@@ -15,7 +15,6 @@
 
 ## Upcoming Features
 
-* Sharding to reduce lock contention
 * Better documentation
 
 ## Example usage
