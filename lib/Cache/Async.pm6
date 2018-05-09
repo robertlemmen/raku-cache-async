@@ -90,12 +90,34 @@ method get($key, +@args --> Promise) {
             $entry = Entry.new(key => $key, timestamp => $now);
             %!entries{$key} = $entry;
             self!link($entry);            
-            $entry.promise = Promise.start({
+            $entry.promise = Promise.new;
+            my $producer-promise = Promise.start({
+                my $prod-result = &.producer.($key, |@args);
+                CATCH {
+                    default: $entry.promise.break($_);
+                }
                 $!lock.protect({
-                    $entry.value = &.producer.($key, |@args);
-                    $entry.promise = Nil;
+                    if $prod-result.isa(Promise) {
+                        $prod-result.then(-> $value {
+                            $!lock.protect({
+                                if ($value.status ~~ Kept) {
+                                    $entry.value = $value.result;
+                                    $entry.promise.keep($value.result);
+                                    $entry.promise = Nil;
+                                }
+                                else {
+                                    $entry.promise.break($value.cause);
+                                    $entry.promise = Nil;
+                                }
+                            });
+                        });
+                    }
+                    else {
+                        $entry.value = $prod-result;
+                        $entry.promise.keep($prod-result);
+                        $entry.promise = Nil;
+                    }
                 });
-                $entry.value;
             });
             self!expire-by-count();
             return $entry.promise;
@@ -123,7 +145,7 @@ method put($key, $value) {
             %!entries{$key} = $entry;
         }
         $entry.value = $value;
-        # XXX expire old entries
+        self!expire-by-count();
     });
 }
 

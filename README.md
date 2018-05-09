@@ -8,15 +8,15 @@
   cache on misses
 * Calls producer async and returns future to result, perfect for usage in an
   otherwise async system
+* Transparent support for producers that return futures themselves
+* Extra args can be passed through to producer easily
 * Locked internally so it can be used from multiple threads or a thread pool
 * Limits on cache size and optionally entry age
 * Propagates exceptions from producer transparently
 * Monitoring of hit rate 
-* Extra args can be passed through to producer easily
 
 ## Upcoming Features
 
-* Support for producers that return futures themselves
 * Better documentation
 
 ## Example usage
