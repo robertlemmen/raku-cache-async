@@ -1,14 +1,14 @@
 # Cache::Async
 
-... a concurrent and asynchronous cache for Perl 6.
+... A Concurrent and Asynchronous Cache for Perl 6.
 
 ## Features
 
 * Producer function that gets passed in on construction and that gets called by
   cache on misses
-* Calls producer async and returns future to result, perfect for usage in an
-  otherwise async system
-* Transparent support for producers that return futures themselves
+* Calls producer async and returns promise to result, perfect for usage in an
+  otherwise async or reactive system
+* Transparent support for producers that return promises themselves
 * Extra args can be passed through to producer easily
 * Locked internally so it can be used from multiple threads or a thread pool
 * Limits on cache size and optionally entry age
@@ -17,12 +17,18 @@
 
 ## Upcoming Features
 
-* Better documentation
+* Optimizations of the async producer case
+* Self-warming caches
+* Object lifetimes can be restricted by producer function
 
 ## Example usage
 
     my $cache = Cache::Async.new(max-size => 1000, producer => sub ($k) { ... });
     say await $cache.get("key234");
+
+## Documentation
+
+Please see the POD in lib/Cache/Async.pm6 for usage scenarios and details on how to use Cache::Async.
 
 ## License
 
