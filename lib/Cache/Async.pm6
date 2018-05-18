@@ -64,7 +64,7 @@ has &.producer;
 has Int $.max-size = 1024;
 has Duration $.max-age;
 
-has Entry %!entries = {};
+has Entry %!entries = %();
 has Entry $!youngest;
 has Entry $!oldest;
 has Lock $!lock = Lock.new;
