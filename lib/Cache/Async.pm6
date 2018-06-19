@@ -28,17 +28,26 @@ misses, but it does not do the monitoring itself or automatically.
 
 =head1 Constructor
 
-    new(:&producer, Int :$max-size, Duration :$max-age)
+    new(:&producer, Int :$max-size, Duration :$max-age, Duration :$refresh-after)
 
 Creates a new cache over the provided B<&producer> sub, which must take a single
-String as the first argument, the key used to look up items in the cache. It can take
-more arguments, see B<get()> below.
+String as the first argument, the key used to look up items in the cache. It can 
+take more arguments, see B<get()> below.
 
-The B<$max-size> argument can be used to limit the number of items the cache will hold at
-any time, the default is 1024. 
+The B<$max-size> argument can be used to limit the number of items the cache will 
+hold at any time, the default is 1024. 
 
 B<$max-age> determines the maximum age an item can live in the cache before 
 it is expired. By default items are not expired by age.
+
+B<$refresh-after> optionally sets a time after which an item will be refreshed 
+by the cache in parallel with returning it. This can be used to reduce latency 
+for frequently used entries. When set (to a value lower than B<$max-age> of 
+course), the cache will upon a hit on an entry that is older than this value 
+immediately return the existing value, but also start an asyncronous re-fetch 
+of the item as if it had experienced a cache miss. This can be used to make
+frequently used items always come from the cache, rather than incurring a cache
+hit with the corresponding fetch latency every now and then.
 
 The following example will create a simple cache with up to 100 items that 
 live for up to 10 seconds. The values returned by the cache are promises 
@@ -55,6 +64,7 @@ my class Entry {
     has Str $.key;
     has $.value is rw;
     has $.timestamp is rw; # XXX would like this to be Instant but then it can't be nullable
+    has Bool $.is-refreshing is rw;
     has Entry $.older is rw;
     has Entry $.younger is rw;
     has Promise $.promise is rw;
@@ -63,6 +73,7 @@ my class Entry {
 has &.producer;
 has Int $.max-size = 1024;
 has Duration $.max-age;
+has Duration $.refresh-after;
 
 has Entry %!entries = %();
 has Entry $!youngest;
@@ -153,6 +164,9 @@ method get($key, +@args --> Promise) {
             $now = now;
             self!expire-by-age($now);
         }
+        elsif defined $!refresh-after {
+            $now = now;
+        }
         $entry = %!entries{$key};
         if ! defined $entry {
             atomic-inc-fetch($!misses);
@@ -200,6 +214,42 @@ method get($key, +@args --> Promise) {
                 atomic-inc-fetch($!hits);
                 my $ret = Promise.new;
                 $ret.keep($entry.value);
+                if defined $!refresh-after {
+                    if $now > $entry.timestamp + $!refresh-after {
+                        if ! $entry.is-refreshing {
+                            $entry.is-refreshing = True;
+                            my $refresh-promise = Promise.start({
+                                my $prod-result = &.producer.($key, |@args);
+                                CATCH {
+                                    # ignore, this is just a refresh attempt
+                                    # anyway
+                                }
+                                $!lock.protect({
+                                    if $prod-result.isa(Promise) {
+                                        $prod-result.then(-> $value {
+                                            $!lock.protect({
+                                                if ($value.status ~~ Kept) {
+                                                    $entry.value = $value.result;
+                                                    $entry.is-refreshing = False;
+                                                    $entry.timestamp = $now;
+                                                }
+                                                else {
+                                                    # error, ignore as we are
+                                                    # just refreshing
+                                                }
+                                            });
+                                        });
+                                    }
+                                    else {
+                                        $entry.value = $prod-result;
+                                        $entry.is-refreshing = False;
+                                        $entry.timestamp = $now;
+                                    }
+                                });
+                            });
+                        }
+                    }
+                }
                 return $ret;
             }
         }
