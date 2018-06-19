@@ -6,6 +6,8 @@
 
 * Producer function that gets passed in on construction and that gets called by
   cache on misses
+* Cache size and maximum entry age can be limited
+* Cache allows refreshing of entries even before they have expired
 * Calls producer async and returns promise to result, perfect for usage in an
   otherwise async or reactive system
 * Transparent support for producers that return promises themselves
@@ -18,7 +20,6 @@
 ## Upcoming Features
 
 * Optimizations of the async producer case
-* Self-warming caches
 * Object lifetimes can be restricted by producer function
 
 ## Example usage
