@@ -45,7 +45,7 @@ subtest {
 }
 is($trace, 'ABCDXABCD', "cycling through items exposes LRU behavior");
 
-$cache = Cache::Async.new(max-age => Duration.new(.1), producer => sub ($k) { $trace-lock.protect({ $trace = $trace ~ $k}); return "[$k]"; });
+$cache = Cache::Async.new(max-age => Duration.new(.2), producer => sub ($k) { $trace-lock.protect({ $trace = $trace ~ $k}); return "[$k]"; });
 $trace = "";
 
 subtest {
@@ -67,7 +67,7 @@ subtest {
         $ret = await $ret;
         is($ret, "[$k]", "cache returned expected result");
     }
-    sleep .2;
+    sleep .4;
     for ('A', 'B', 'C', 'D') -> $k {
         my $ret = $cache.get($k);
         $ret = await $ret;
@@ -84,7 +84,7 @@ subtest {
         my $ret = $cache.get($k);
         $ret = await $ret;
         is($ret, "[$k]", "cache returned expected result");
-        sleep .03;
+        sleep .06;
     }
 }
 is($trace, 'ABCDBA', "pausing between gets evicts the older entries");
