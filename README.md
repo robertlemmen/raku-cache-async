@@ -12,13 +12,14 @@
   otherwise async or reactive system
 * Transparent support for producers that return promises themselves
 * Extra args can be passed through to producer easily
+* Jitter for refresh and expiry to smooth out producer calls over time
 * Locked internally so it can be used from multiple threads or a thread pool
-* Limits on cache size and optionally entry age
 * Propagates exceptions from producer transparently
 * Monitoring of hit rate 
 
 ## Upcoming Features
 
+* Non-string keys (doh)
 * Optimizations of the async producer case
 * Object lifetimes can be restricted by producer function
 

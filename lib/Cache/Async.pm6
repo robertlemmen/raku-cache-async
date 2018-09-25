@@ -28,7 +28,7 @@ misses, but it does not do the monitoring itself or automatically.
 
 =head1 Constructor
 
-    new(:&producer, Int :$max-size, Duration :$max-age, Duration :$refresh-after)
+    new(:&producer, Int :$max-size, Duration :$max-age, Duration :$refresh-after, Duration :$jitter)
 
 Creates a new cache over the provided B<&producer> sub, which must take a single
 String as the first argument, the key used to look up items in the cache. It can 
@@ -48,6 +48,14 @@ immediately return the existing value, but also start an asyncronous re-fetch
 of the item as if it had experienced a cache miss. This can be used to make
 frequently used items always come from the cache, rather than incurring a cache
 hit with the corresponding fetch latency every now and then.
+
+B<$jitter> optionally sets a maximum jitter duration. When an item is refreshed 
+and placed in the cache, the timestamp of the item is incremented by a random 
+interval between 0 and this duration. This can be useful if your application 
+loads many items after boot and wants to make sure that the refresh times 
+spread out over time and do not stay clustered together. This value needs to 
+be smaller than B<$refresh-after> (and therefore B<max-age>), the default is
+zero.
 
 The following example will create a simple cache with up to 100 items that 
 live for up to 10 seconds. The values returned by the cache are promises 
@@ -72,8 +80,9 @@ my class Entry {
 
 has &.producer;
 has Int $.max-size = 1024;
-has Duration $.max-age;
-has Duration $.refresh-after;
+has $.max-age; # XXX would like these three to be Duration, but then they are not nullable
+has $.refresh-after;
+has $.jitter;
 
 has Entry %!entries = %();
 has Entry $!youngest;
@@ -82,6 +91,24 @@ has Lock $!lock = Lock.new;
 
 has atomicint $!hits = 0;
 has atomicint $!misses = 0;
+
+method TWEAK() {
+    my $min = $!max-age;
+    if (defined $!max-age) && (defined $!refresh-after) {
+        if $!max-age <= $!refresh-after {
+            die "max-age cannot be less than refresh-after";
+        }
+        $min = $!refresh-after;
+    }
+    if (defined $min) && (defined $!jitter) {
+        if $!jitter >= $min {
+            die "jitter cannot be larger or equals to refresh-after/max-age";
+        }
+    }
+    if (! defined $min) && (defined $!jitter) {
+        die "jitter set, but neither max-age nor refresh-after set";
+    }
+}
 
 method !unlink($entry) {
     if $!youngest === $entry {
@@ -170,7 +197,11 @@ method get($key, +@args --> Promise) {
         $entry = %!entries{$key};
         if ! defined $entry {
             atomic-inc-fetch($!misses);
-            $entry = Entry.new(key => $key, timestamp => $now);
+            my $new-ts = $now;
+            if defined $!jitter {
+                $new-ts += Duration.new($!jitter.Numeric.rand);
+            }
+            $entry = Entry.new(key => $key, timestamp => $new-ts);
             %!entries{$key} = $entry;
             self!link($entry);            
             $entry.promise = Promise.new;
@@ -231,7 +262,11 @@ method get($key, +@args --> Promise) {
                                                 if ($value.status ~~ Kept) {
                                                     $entry.value = $value.result;
                                                     $entry.is-refreshing = False;
-                                                    $entry.timestamp = $now;
+                                                    my $new-ts = $now;
+                                                    if defined $!jitter {
+                                                        $new-ts += Duration.new($!jitter.Numeric.rand);
+                                                    }
+                                                    $entry.timestamp = $new-ts;
                                                 }
                                                 else {
                                                     # error, ignore as we are
@@ -243,7 +278,11 @@ method get($key, +@args --> Promise) {
                                     else {
                                         $entry.value = $prod-result;
                                         $entry.is-refreshing = False;
-                                        $entry.timestamp = $now;
+                                        my $new-ts = $now;
+                                        if defined $!jitter {
+                                            $new-ts += Duration.new($!jitter.Numeric.rand);
+                                        }
+                                        $entry.timestamp = $new-ts;
                                     }
                                 });
                             });
