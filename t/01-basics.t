@@ -19,8 +19,7 @@ ok(%producer-count{'Y'}//0 == 1, "Y produced on first call");
 ok((await $cache.get("Y")) ~~ /'Y/' <digit>/, "returned content matches producer output");
 ok(%producer-count{'Y'}//0 == 1, "Y not re-produced on second call");
 
-# XXX we should really support non-string keys
-#ok(await $cache.get(123) == 1, "Can get for a numeric key");
+ok((await $cache.get(123)) eq "123/0", "Can get for a numeric key");
 
 dies-ok({ Cache::Async.new(jitter => Duration.new(.2)) }, "c'tor with jitter but no max-age dies");
 dies-ok({ Cache::Async.new(jitter => Duration.new(2), max-age => Duration.new(1)) }, 

@@ -201,7 +201,7 @@ method get($key, +@args --> Promise) {
             if defined $!jitter {
                 $new-ts += Duration.new($!jitter.Numeric.rand);
             }
-            $entry = Entry.new(key => $key, timestamp => $new-ts);
+            $entry = Entry.new(key => $key.Str, timestamp => $new-ts);
             %!entries{$key} = $entry;
             self!link($entry);            
             $entry.promise = Promise.new;
@@ -312,7 +312,7 @@ method put($key, $value) {
     $!lock.protect({
         my $entry = %!entries{$key};
         if ! defined $entry {
-            $entry = Entry.new(key => $key, value => $value);
+            $entry = Entry.new(key => $key.Str, value => $value);
             %!entries{$key} = $entry;
         }
         $entry.value = $value;

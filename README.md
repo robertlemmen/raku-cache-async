@@ -19,7 +19,6 @@
 
 ## Upcoming Features
 
-* Non-string keys (doh)
 * Optimizations of the async producer case
 * Object lifetimes can be restricted by producer function
 
