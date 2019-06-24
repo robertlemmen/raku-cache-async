@@ -339,6 +339,44 @@ method clear() {
 }
 
 =begin pod
+
+As a special case, you can also query for contents of the cache, but without 
+calling the producer function on a miss, and without touching any cache 
+statistics. This is useful to check for entry existence in cache maintenance 
+tasks, but also and primarily when doing operations that violate the LRU 
+criteria. For example imagine a cache with limited size over a very large backing 
+resource, but with normal operations that show strong LRU characteristics. A
+perfect case for a cache, and you can expect good cache hit rates. Now every now 
+and then a maintenance task kicks in that traverses all resources. This could also
+benefit from the cache, but if it updates the cache it would basically replace the 
+whole cache with the tail end of it's iteration, destroying the LRU properties of 
+the cache and causing increased cache misses for some time afterwards, a bit like
+a cache that is empty. This method allows utilising entries in the cache if present,
+but not touching the cache otherwise. Returns Nil if no entry is found.
+
+    get-if-present($key)
+
+=end pod
+
+method get-if-present($key) {
+    $!lock.protect({
+        # we still need to do this in order to ensure we do not return stale
+        # entries.
+        if defined $!max-age {
+            my $now = now;
+            self!expire-by-age($now);
+        }
+        my $entry = %!entries{$key};
+        if defined $entry {
+            if ! defined $entry.promise {
+                return $entry.value;
+            }
+        }
+    });
+    return Nil;
+}
+
+=begin pod
 =head1 Monitoring
 
 The behavior of the cache can be monitored, the call will return total 

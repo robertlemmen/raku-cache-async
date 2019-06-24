@@ -15,15 +15,15 @@
 * Jitter for refresh and expiry to smooth out producer calls over time
 * Locked internally so it can be used from multiple threads or a thread pool
 * Propagates exceptions from producer transparently
+* Get entry from cache only if present, without loading/refreshing.
 * Monitoring of hit rate 
 
 ## Upcoming Features
 
-* Get entry from cache if present, without loading/refreshing
 * Optimizations of the async producer case
 * Object lifetimes can be restricted by producer function
 
-## Example usage
+## Simple Example usage
 
     my $cache = Cache::Async.new(max-size => 1000, producer => sub ($k) { ... });
     say await $cache.get("key234");

@@ -6,7 +6,7 @@ my %producer-count;
 
 my $cache = Cache::Async.new(producer => sub ($k) { my $i = %producer-count{$k}++; return "$k/$i"; });
 
-plan 12;
+plan 14;
 
 ok(sum(%producer-count.values) == 0, "no initial producer state");
 
@@ -20,6 +20,9 @@ ok((await $cache.get("Y")) ~~ /'Y/' <digit>/, "returned content matches producer
 ok(%producer-count{'Y'}//0 == 1, "Y not re-produced on second call");
 
 ok((await $cache.get(123)) eq "123/0", "Can get for a numeric key");
+
+ok($cache.get-if-present(123) eq "123/0", "Can get-if-present an existing key");
+ok((! defined $cache.get-if-present(124)), "get-if-present on a non-existing key return Nil");
 
 dies-ok({ Cache::Async.new(jitter => Duration.new(.2)) }, "c'tor with jitter but no max-age dies");
 dies-ok({ Cache::Async.new(jitter => Duration.new(2), max-age => Duration.new(1)) }, 
