@@ -210,6 +210,9 @@ method get($key, +@args --> Promise) {
                 CATCH {
                     default: $entry.promise.break($_);
                 }
+                CONTROL {
+                    default: $entry.promise.break($_);
+                }
                 $!lock.protect({
                     if $prod-result.isa(Promise) {
                         $prod-result.then(-> $value {
