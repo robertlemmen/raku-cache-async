@@ -162,7 +162,7 @@ method !expire-by-age($now) {
 
 In order to get items from, or better through, the cache, the B<get()> method is used:
 
-    get($key, +@args --> Promise) {
+    get($key, |args --> Promise) {
 
 The first argument is the B<$key> used to look up items in the cache, and is passed 
 through to the producer function the cache uses. Any other arguments are also passed 
@@ -183,7 +183,7 @@ and simply return the promise from the producer directly.
 
 =end pod
 
-method get($key, +@args --> Promise) {
+method get($key, |args --> Promise) {
     my $entry;
     my $now = Nil;
     $!lock.protect({
@@ -206,7 +206,7 @@ method get($key, +@args --> Promise) {
             self!link($entry);            
             $entry.promise = Promise.new;
             my $producer-promise = Promise.start({
-                my $prod-result = &.producer.($key, |@args);
+                my $prod-result = &.producer.($key, |args);
                 CATCH {
                     default: $entry.promise.break($_);
                 }
@@ -253,7 +253,7 @@ method get($key, +@args --> Promise) {
                         if ! $entry.is-refreshing {
                             $entry.is-refreshing = True;
                             my $refresh-promise = Promise.start({
-                                my $prod-result = &.producer.($key, |@args);
+                                my $prod-result = &.producer.($key, |args);
                                 CATCH {
                                     # ignore, this is just a refresh attempt
                                     # anyway
