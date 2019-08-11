@@ -13,7 +13,8 @@
 * Transparent support for producers that return promises themselves
 * Extra args can be passed through to producer easily
 * Jitter for refresh and expiry to smooth out producer calls over time
-* Locked internally so it can be used from multiple threads or a thread pool
+* Locked internally so it can be used from multiple threads or a thread pool,
+  but no lock help while calling the producer function.
 * Propagates exceptions from producer transparently
 * Get entry from cache only if present, without loading/refreshing.
 * Monitoring of hit rate 
@@ -26,7 +27,9 @@
 ## Simple Example usage
 
     my $cache = Cache::Async.new(max-size => 1000, producer => sub ($k) { ... });
-    say await $cache.get("key234");
+    say await $cache.get('key234');
+
+But of course there are lots more details!
 
 ## Documentation
 
