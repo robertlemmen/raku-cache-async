@@ -28,7 +28,8 @@ misses, but it does not do the monitoring itself or automatically.
 
 =head1 Constructor
 
-    new(:&producer, Int :$max-size, Duration :$max-age, Duration :$refresh-after, Duration :$jitter)
+    new(:&producer, Int :$max-size, Duration :$max-age, Duration :$refresh-after, 
+        Duration :$jitter, Bool :$cache-undefined = True)
 
 Creates a new cache over the provided B<&producer> sub, which must take a single
 String as the first argument, the key used to look up items in the cache. It can 
@@ -57,6 +58,11 @@ spread out over time and do not stay clustered together. This value needs to
 be smaller than B<$refresh-after> (and therefore B<max-age>), the default is
 zero.
 
+If B<$cache-undefined> is set to False, then undefined return values from the 
+producer function (as well as Promises that are undefined when kept of course) 
+are not cached and will be retried the next time the coresponding key is 
+queried.
+
 The following example will create a simple cache with up to 100 items that 
 live for up to 10 seconds. The values returned by the cache are promises 
 that will hold the key specified when querying the cache enclosed in square 
@@ -81,6 +87,7 @@ my class Entry {
 has &.producer;
 has Int $.max-size = 1024;
 has $.max-age; # XXX would like these three to be Duration, but then they are not nullable
+has Bool $.cache-undefined = True;
 has $.refresh-after;
 has $.jitter;
 
@@ -218,9 +225,16 @@ method get($key, +@args --> Promise) {
                         $prod-result.then(-> $value {
                             $!lock.protect({
                                 if ($value.status ~~ Kept) {
-                                    $entry.value = $value.result;
-                                    $entry.promise.keep($value.result);
-                                    $entry.promise = Nil;
+                                    if (defined $value.result) || $.cache-undefined {
+                                        $entry.value = $value.result;
+                                        $entry.promise.keep($value.result);
+                                        $entry.promise = Nil;
+                                    }
+                                    else {
+                                        $entry.promise.keep($value.result);
+                                        %!entries{$entry.key}:delete;
+                                        self!unlink($entry);
+                                    }
                                 }
                                 else {
                                     $entry.promise.break($value.cause);
@@ -230,9 +244,16 @@ method get($key, +@args --> Promise) {
                         });
                     }
                     else {
-                        $entry.value = $prod-result;
-                        $entry.promise.keep($prod-result);
-                        $entry.promise = Nil;
+                        if (defined $prod-result) || $.cache-undefined {
+                            $entry.value = $prod-result;
+                            $entry.promise.keep($prod-result);
+                            $entry.promise = Nil;
+                        }
+                        else {
+                            $entry.promise.keep($prod-result);
+                            %!entries{$entry.key}:delete;
+                            self!unlink($entry);
+                        }
                     }
                 });
             });

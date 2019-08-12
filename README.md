@@ -17,6 +17,7 @@
   but no lock help while calling the producer function.
 * Propagates exceptions from producer transparently
 * Get entry from cache only if present, without loading/refreshing.
+* Configurably, Nil values can be passed through without caching them
 * Monitoring of hit rate 
 
 ## Upcoming Features
