@@ -13,5 +13,5 @@
         "Test::META"
     ],
     "license" : "Artistic-2.0",
-    "source-url" : "git://github.com/robertlemmen/perl6-cache-async.git"
+    "source-url" : "git://github.com/robertlemmen/raku-cache-async.git"
 }
