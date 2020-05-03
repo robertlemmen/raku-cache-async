@@ -36,6 +36,9 @@ But of course there are lots more details!
 
 Please see the POD in lib/Cache/Async.pm6 for usage scenarios and details on how to use Cache::Async.
 
+I also have a short article that cache users might find interesting:
+[The Surprising Sanity of Using a Cache but Not Updating It](https://github.com/robertlemmen/cache-weirdness/blob/master/weirdness1.md)
+
 ## License
 
 Cache::Async is licensed under the [Artistic License 2.0](https://opensource.org/licenses/Artistic-2.0).
