@@ -237,6 +237,7 @@ method get($key, +@args --> Promise) {
             return $entry.promise;
         }
         else {
+            # XXX hm, should this not move it to the front?
             if defined $entry.promise {
                 atomic-inc-fetch($!misses);
                 return $entry.promise;
@@ -338,6 +339,9 @@ method clear() {
     });
 }
 
+# XXX this ought to be after the get() to make the pod less confusing
+# also: does this method make sense? isn't it better to call the producer
+# but not update the cache?
 =begin pod
 
 As a special case, you can also query for contents of the cache, but without 

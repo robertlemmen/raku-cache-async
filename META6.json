@@ -1,17 +1,17 @@
 {
-    "perl" : "6.*",
     "name" : "Cache::Async",
-    "version" : "0.1.6",
     "description" : "Concurrent and async cache implementation",
+    "version" : "0.1.6",
+    "perl" : "6.c",
     "authors" : [
-        "Robert Lemmen"
+        "Robert Lemmen <robertle@semistable.com>"
     ],
+    "provides" : {
+        "Cache::Async" : "lib/Cache/Async.rakumod"
+    },
     "test-depends" : [
         "Test::META"
     ],
-    "provides" : {
-        "Cache::Async" : "lib/Cache/Async.pm6"
-    },
     "license" : "Artistic-2.0",
-    "source-url" : "https://github.com/robertlemmen/perl6-cache-async.git"
+    "source-url" : "git://github.com/robertlemmen/perl6-cache-async.git"
 }

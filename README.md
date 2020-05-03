@@ -1,6 +1,6 @@
 # Cache::Async
 
-... A Concurrent and Asynchronous Cache for Perl 6.
+... A Concurrent and Asynchronous Cache for the Raku language.
 
 ## Features
 
